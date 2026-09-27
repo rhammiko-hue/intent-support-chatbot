@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm Support Chatbot</title>
+<style>
+  body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+  #log { border: 1px solid #ccc; border-radius: 8px; height: 380px; overflow-y: auto; padding: 1rem; margin-bottom: 1rem; }
+  .user { text-align: right; margin: 0.5rem 0; }
+  .user span { background: #dbeafe; border-radius: 12px; padding: 0.4rem 0.8rem; display: inline-block; }
+  .bot span { background: #f0fdf4; border-radius: 12px; padding: 0.4rem 0.8rem; display: inline-block; }
+  .meta { font-size: 0.75rem; color: #888; }
+  #row { display: flex; gap: 0.5rem; }
+  #msg { flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc; }
+  button { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>🌾 Farm Support Chatbot</h2>
+<div id="log"></div>
+<div id="row">
+  <input id="msg" placeholder="Ask about crops, irrigation, pests, fertilizer..." autocomplete="off">
+  <button onclick="send()">Send</button>
+</div>
+<script>
+const sessionId = "web-" + Math.random().toString(36).slice(2);
+const log = document.getElementById("log");
+const input = document.getElementById("msg");
+function add(cls, text, meta) {
+  const div = document.createElement("div");
+  div.className = cls;
+  div.innerHTML = "<span></span>" + (meta ? `<div class="meta">${meta}</div>` : "");
+  div.querySelector("span").textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+  add("user", text);
+  input.value = "";
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({message: text, session_id: sessionId})
+  });
+  const data = await res.json();
+  add("bot", data.reply || data.error, data.intent ? `intent=${data.intent} · confidence=${data.confidence}` : "");
+}
+input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+add("bot", "Hello! I'm your farm assistant. Ask me about crops, irrigation, pests, fertilizer, weather, or market prices.");
+</script>
+</body>
+</html>
